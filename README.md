@@ -10,6 +10,7 @@
 -   **Live Dashboard**: Real-time visualization of latency percentiles (P50, P90, P99), RPS, and network throughput.
 -   **Comprehensive Analytics**: Track total hits, errors, average response times, and data transfer rates.
 -   **Flexible Configuration**: Supports GET, POST, PUT, DELETE methods with custom headers and body data (JSON, GraphQL, Form Data).
+-   **File Upload Support**: Seamlessly attach local files as `multipart/form-data` payloads, complete with custom field names and dynamic throughput calculation.
 -   **Advanced Authentication**: Seamlessly handle Bearer tokens and Basic Auth.
 -   **Visual Excellence**: Modern, glassmorphic UI with dynamic charts and responsive design.
 

@@ -19,6 +19,8 @@ function App() {
     basicPass: '',
     bodyType: 'none',
     bodyData: '',
+    filePath: '',
+    fileKey: 'file',
     customHeaders: ''
   });
 
@@ -73,6 +75,8 @@ function App() {
         basic_pass: config.basicPass || null,
         body_type: config.bodyType,
         body_data: config.bodyData || null,
+        file_path: config.filePath || null,
+        file_key: config.fileKey || null,
         custom_headers: config.customHeaders || null,
       };
       await invoke('start_test', { config: payload });

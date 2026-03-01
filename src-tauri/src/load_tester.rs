@@ -1,4 +1,7 @@
-use reqwest::{Client, Method, header::{HeaderMap, HeaderName, HeaderValue}};
+use reqwest::{
+    header::{HeaderMap, HeaderName, HeaderValue},
+    multipart, Client, Method,
+};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -20,6 +23,8 @@ pub struct LoadTestConfig {
     pub basic_pass: Option<String>,
     pub body_type: String, // "none" | "json" | "graphql" | "formdata"
     pub body_data: Option<String>,
+    pub file_path: Option<String>,
+    pub file_key: Option<String>,
     pub custom_headers: Option<String>,
 }
 
@@ -66,11 +71,7 @@ impl LoadTestEngine {
         }
     }
 
-    pub fn start(
-        &mut self,
-        app: AppHandle,
-        config: LoadTestConfig,
-    ) -> Result<(), String> {
+    pub fn start(&mut self, app: AppHandle, config: LoadTestConfig) -> Result<(), String> {
         if self.is_running.load(Ordering::SeqCst) {
             return Err("Test is already running".to_string());
         }
@@ -89,7 +90,9 @@ impl LoadTestEngine {
                 if parts.len() == 2 {
                     let k = parts[0].trim();
                     let v = parts[1].trim();
-                    if let (Ok(name), Ok(value)) = (HeaderName::from_str(k), HeaderValue::from_str(v)) {
+                    if let (Ok(name), Ok(value)) =
+                        (HeaderName::from_str(k), HeaderValue::from_str(v))
+                    {
                         headers.insert(name, value);
                     }
                 }
@@ -103,7 +106,7 @@ impl LoadTestEngine {
                 }
             }
         } else if config.auth_type == "basic" {
-            use base64::{Engine as _, engine::general_purpose::STANDARD};
+            use base64::{engine::general_purpose::STANDARD, Engine as _};
             let user = config.basic_user.clone().unwrap_or_default();
             let pass = config.basic_pass.clone().unwrap_or_default();
             let encoded = STANDARD.encode(format!("{}:{}", user, pass));
@@ -128,10 +131,30 @@ impl LoadTestEngine {
         let url = config.url.clone();
         let body = config.body_data.clone().unwrap_or_default();
         let body_type = config.body_type.clone();
+        
+        let file_path = config.file_path.clone();
+        let file_key = config.file_key.clone().unwrap_or_else(|| "file".to_string());
+        
         let duration = Duration::from_secs(config.duration);
         let threads = config.threads;
 
         tauri::async_runtime::spawn(async move {
+            let mut final_body_bytes: Option<Vec<u8>> = None;
+            if body_type == "file" {
+                if let Some(path) = &file_path {
+                    match tokio::fs::read(path).await {
+                        Ok(data) => {
+                            final_body_bytes = Some(data);
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to read file for payload: {}", e);
+                            is_running.store(false, Ordering::SeqCst);
+                            return;
+                        }
+                    }
+                }
+            }
+
             let builder = Client::builder()
                 .timeout(Duration::from_secs(30))
                 .pool_idle_timeout(Duration::from_secs(15))
@@ -158,6 +181,9 @@ impl LoadTestEngine {
                 let method = method.clone();
                 let headers = headers.clone();
                 let body = body.clone();
+                let final_body_bytes = final_body_bytes.clone();
+                let file_path_clone = file_path.clone();
+                let file_key = file_key.clone();
                 let cancel = cancel_token.clone();
                 let body_type = body_type.clone();
 
@@ -168,16 +194,41 @@ impl LoadTestEngine {
                     for (name, value) in &headers {
                         header_size += name.as_str().len() + value.len() + 4; // ": \r\n"
                     }
-                    let sent_bytes_base = (request_line_size + header_size + body.len() + 2) as u64;
+                    let body_len = if body_type == "file" {
+                        final_body_bytes.as_ref().map(|b| b.len()).unwrap_or(0)
+                    } else {
+                        body.len()
+                    };
+                    let sent_bytes_base = (request_line_size + header_size + body_len + 2) as u64;
 
                     loop {
                         if cancel.is_cancelled() || start_time.elapsed() >= duration {
                             break;
                         }
 
-                        let mut req = client.request(method.clone(), &url).headers(headers.clone());
+                        let mut req = client
+                            .request(method.clone(), &url)
+                            .headers(headers.clone());
                         
-                        if body_type != "none" && !body.is_empty() {
+                        if body_type == "file" {
+                            if let Some(bytes_data) = &final_body_bytes {
+                                let file_name = if let Some(path) = &file_path_clone {
+                                    std::path::Path::new(path)
+                                        .file_name()
+                                        .unwrap_or_default()
+                                        .to_string_lossy()
+                                        .into_owned()
+                                } else {
+                                    "upload.bin".to_string()
+                                };
+                                
+                                let part = multipart::Part::bytes(bytes_data.clone())
+                                    .file_name(file_name);
+                                let form = multipart::Form::new()
+                                    .part(file_key.clone(), part);
+                                req = req.multipart(form);
+                            }
+                        } else if body_type != "none" && !body.is_empty() {
                             req = req.body(body.clone());
                         }
 
@@ -194,11 +245,15 @@ impl LoadTestEngine {
                                     recv_bytes = b.len() as u64;
                                 }
                                 ok
-                            },
+                            }
                             Err(_) => false,
                         };
 
-                        if tx.send((success, elapsed, sent_bytes_base, recv_bytes)).await.is_err() {
+                        if tx
+                            .send((success, elapsed, sent_bytes_base, recv_bytes))
+                            .await
+                            .is_err()
+                        {
                             break;
                         }
                     }
@@ -212,7 +267,7 @@ impl LoadTestEngine {
                 let mut total_requests = 0;
                 let mut total_errors = 0;
                 let mut latencies = Vec::new();
-                
+
                 let mut total_bytes_sent = 0;
                 let mut total_bytes_recv = 0;
 
@@ -243,7 +298,7 @@ impl LoadTestEngine {
                     if last_report.elapsed() >= Duration::from_secs(1) {
                         let now = Instant::now();
                         let interval = now.duration_since(last_report).as_secs_f64();
-                        
+
                         let rps = (total_requests - last_total_requests) as f64 / interval;
                         let bs_ps = (total_bytes_sent - last_total_bytes_sent) as f64 / interval;
                         let br_ps = (total_bytes_recv - last_total_bytes_recv) as f64 / interval;
@@ -252,7 +307,7 @@ impl LoadTestEngine {
                         last_total_bytes_sent = total_bytes_sent;
                         last_total_bytes_recv = total_bytes_recv;
                         last_report = now;
-                        
+
                         let elapsed_secs = start_time.elapsed().as_secs();
                         let formatted_duration = format!(
                             "{}:{:02}:{:02}",
@@ -269,12 +324,32 @@ impl LoadTestEngine {
 
                         let mut sorted = latencies.clone();
                         sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
-                        
-                        let p50 = if sorted.is_empty() { 0.0 } else { sorted[(sorted.len() as f64 * 0.50) as usize] };
-                        let p80 = if sorted.is_empty() { 0.0 } else { sorted[(sorted.len() as f64 * 0.80) as usize] };
-                        let p90 = if sorted.is_empty() { 0.0 } else { sorted[(sorted.len() as f64 * 0.90) as usize] };
-                        let p95 = if sorted.is_empty() { 0.0 } else { sorted[(sorted.len() as f64 * 0.95) as usize] };
-                        let p99 = if sorted.is_empty() { 0.0 } else { sorted[(sorted.len() as f64 * 0.99) as usize] };
+
+                        let p50 = if sorted.is_empty() {
+                            0.0
+                        } else {
+                            sorted[(sorted.len() as f64 * 0.50) as usize]
+                        };
+                        let p80 = if sorted.is_empty() {
+                            0.0
+                        } else {
+                            sorted[(sorted.len() as f64 * 0.80) as usize]
+                        };
+                        let p90 = if sorted.is_empty() {
+                            0.0
+                        } else {
+                            sorted[(sorted.len() as f64 * 0.90) as usize]
+                        };
+                        let p95 = if sorted.is_empty() {
+                            0.0
+                        } else {
+                            sorted[(sorted.len() as f64 * 0.95) as usize]
+                        };
+                        let p99 = if sorted.is_empty() {
+                            0.0
+                        } else {
+                            sorted[(sorted.len() as f64 * 0.99) as usize]
+                        };
 
                         let stats = LoadTestStats {
                             duration: formatted_duration,
@@ -303,7 +378,7 @@ impl LoadTestEngine {
 
                 // Final report
                 is_running.store(false, Ordering::SeqCst);
-                
+
                 // Send final stats with is_running: false
                 let elapsed_secs = start_time.elapsed().as_secs();
                 let formatted_duration = format!(
@@ -321,12 +396,32 @@ impl LoadTestEngine {
 
                 let mut sorted = latencies.clone();
                 sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
-                
-                let p50 = if sorted.is_empty() { 0.0 } else { sorted[(sorted.len() as f64 * 0.50) as usize] };
-                let p80 = if sorted.is_empty() { 0.0 } else { sorted[(sorted.len() as f64 * 0.80) as usize] };
-                let p90 = if sorted.is_empty() { 0.0 } else { sorted[(sorted.len() as f64 * 0.90) as usize] };
-                let p95 = if sorted.is_empty() { 0.0 } else { sorted[(sorted.len() as f64 * 0.95) as usize] };
-                let p99 = if sorted.is_empty() { 0.0 } else { sorted[(sorted.len() as f64 * 0.99) as usize] };
+
+                let p50 = if sorted.is_empty() {
+                    0.0
+                } else {
+                    sorted[(sorted.len() as f64 * 0.50) as usize]
+                };
+                let p80 = if sorted.is_empty() {
+                    0.0
+                } else {
+                    sorted[(sorted.len() as f64 * 0.80) as usize]
+                };
+                let p90 = if sorted.is_empty() {
+                    0.0
+                } else {
+                    sorted[(sorted.len() as f64 * 0.90) as usize]
+                };
+                let p95 = if sorted.is_empty() {
+                    0.0
+                } else {
+                    sorted[(sorted.len() as f64 * 0.95) as usize]
+                };
+                let p99 = if sorted.is_empty() {
+                    0.0
+                } else {
+                    sorted[(sorted.len() as f64 * 0.99) as usize]
+                };
 
                 let final_stats = LoadTestStats {
                     duration: formatted_duration,

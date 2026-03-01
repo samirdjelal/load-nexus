@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { open } from '@tauri-apps/plugin-dialog';
 
 const ConfigurationPage = ({ initialConfig, onSave, onCancel }) => {
     const [config, setConfig] = useState(initialConfig || {
@@ -12,6 +13,8 @@ const ConfigurationPage = ({ initialConfig, onSave, onCancel }) => {
         basicPass: '',
         bodyType: 'none',
         bodyData: '',
+        filePath: '',
+        fileKey: 'file',
         customHeaders: ''
     });
 
@@ -142,8 +145,8 @@ const ConfigurationPage = ({ initialConfig, onSave, onCancel }) => {
                                         key={type}
                                         onClick={() => setConfig({ ...config, authType: type })}
                                         className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-md transition-all duration-200 ${config.authType === type
-                                                ? 'bg-surface-border text-white shadow-sm'
-                                                : 'text-text-secondary hover:text-text-primary hover:bg-surface-border/30'
+                                            ? 'bg-surface-border text-white shadow-sm'
+                                            : 'text-text-secondary hover:text-text-primary hover:bg-surface-border/30'
                                             }`}
                                     >
                                         {type === 'none' ? 'None' : type === 'bearer' ? 'Bearer Token' : 'Basic Auth'}
@@ -206,13 +209,13 @@ const ConfigurationPage = ({ initialConfig, onSave, onCancel }) => {
 
                             <div className="mb-4">
                                 <div className="inline-flex bg-background-dark/80 p-1 rounded-lg border border-surface-border/50 w-full overflow-x-auto custom-scrollbar">
-                                    {['none', 'json', 'graphql', 'formdata'].map((type) => (
+                                    {['none', 'json', 'graphql', 'formdata', 'file'].map((type) => (
                                         <button
                                             key={type}
                                             onClick={() => setConfig({ ...config, bodyType: type })}
                                             className={`flex-1 px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-md transition-all duration-200 whitespace-nowrap ${config.bodyType === type
-                                                    ? 'bg-surface-border text-white shadow-sm'
-                                                    : 'text-text-secondary hover:text-text-primary hover:bg-surface-border/30'
+                                                ? 'bg-surface-border text-white shadow-sm'
+                                                : 'text-text-secondary hover:text-text-primary hover:bg-surface-border/30'
                                                 }`}
                                         >
                                             {type}
@@ -221,7 +224,51 @@ const ConfigurationPage = ({ initialConfig, onSave, onCancel }) => {
                                 </div>
                             </div>
 
-                            {config.bodyType !== 'none' ? (
+                            {config.bodyType === 'file' ? (
+                                <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-top-2 duration-300 min-h-[160px] gap-4">
+                                    <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-surface-border/50 rounded-md bg-background-dark/20 p-6 relative group">
+                                        <button
+                                            onClick={async () => {
+                                                const selected = await open({
+                                                    multiple: false,
+                                                });
+                                                if (selected) {
+                                                    setConfig({ ...config, filePath: selected });
+                                                }
+                                            }}
+                                            className="px-6 py-2.5 rounded-md text-sm font-medium bg-surface-dark hover:bg-surface-border text-white transition-all border border-surface-border shadow-md flex items-center gap-2 mb-4 group-hover:bg-surface-border"
+                                        >
+                                            <span className="material-symbols-outlined text-chart-green group-hover:scale-110 transition-transform">upload_file</span>
+                                            Select File
+                                        </button>
+                                        {config.filePath ? (
+                                            <div className="text-center w-full">
+                                                <p className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-1">Selected File</p>
+                                                <p className="text-sm text-white font-mono truncate px-4 max-w-full" title={config.filePath}>
+                                                    {config.filePath.split('\\').pop().split('/').pop()}
+                                                </p>
+                                                <p className="text-xs text-text-secondary/60 mt-2 truncate max-w-full" title={config.filePath}>
+                                                    {config.filePath}
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm text-text-secondary font-mono">No file selected</p>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">Form Field Name</label>
+                                        <input
+                                            type="text"
+                                            name="fileKey"
+                                            value={config.fileKey || 'file'}
+                                            onChange={handleChange}
+                                            className="w-full bg-background-dark/50 border border-surface-border/50 rounded-md p-3 text-white focus:outline-none focus:ring-2 focus:ring-chart-green/40 focus:border-chart-green/60 transition-all text-sm font-mono placeholder-text-secondary/50"
+                                            placeholder="file"
+                                        />
+                                        <p className="text-xs text-text-secondary mt-1">The key used for the multipart form data</p>
+                                    </div>
+                                </div>
+                            ) : config.bodyType !== 'none' ? (
                                 <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-top-2 duration-300 min-h-[160px]">
                                     <textarea
                                         name="bodyData"
