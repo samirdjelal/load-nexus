@@ -1,8 +1,8 @@
 [package]
 name = "load-nexus"
-version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+version = "0.1.1"
+description = "High-performance API load testing tool built with Rust and Tauri. Real-time metrics, P99 latencies, and a sleek, multi-threaded engine for modern developers."
+authors = ["Samir Djelal"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -29,4 +29,6 @@ tokio-util = "0.7"
 uuid = { version = "1", features = ["v4", "fast-rng"] }
 base64 = "0.22.1"
 tauri-plugin-dialog = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
 

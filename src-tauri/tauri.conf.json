@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "load-nexus",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "identifier": "com.samirdjelal.load-nexus",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -22,6 +22,14 @@
     ],
     "security": {
       "csp": null
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDJCMjUxMEJGQ0EyREE2ODUKUldTRnBpM0t2eEFsSzlGZDRWaXVIMGRaakR5UmUvY1NxMG44UTJSYzMyWHpCM3M0c1FvUnM2Y1cK",
+      "endpoints": [
+        "https://github.com/samirdjelal/load-nexus/releases/latest/download/latest.json"
+      ]
     }
   },
   "bundle": {

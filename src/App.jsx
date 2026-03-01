@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { check } from '@tauri-apps/plugin-updater';
+import { ask, message } from '@tauri-apps/plugin-dialog';
+import { relaunch } from '@tauri-apps/plugin-process';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import ConfigurationPage from './components/ConfigurationPage';
@@ -58,6 +61,52 @@ function App() {
     return () => {
       if (unlisten) unlisten();
     };
+  }, []);
+
+  useEffect(() => {
+    const checkForUpdates = async () => {
+      try {
+        const update = await check();
+        if (update) {
+          console.log(`Update to ${update.version} available! Date: ${update.date}`);
+          let downloaded = 0;
+          let contentLength = 0;
+
+          const confirmed = await ask(
+            `A new version (${update.version}) is available. Would you like to install it now?`,
+            { title: 'Update Available', kind: 'info' }
+          );
+
+          if (confirmed) {
+            await update.downloadAndInstall((event) => {
+              switch (event.event) {
+                case 'Started':
+                  contentLength = event.data.contentLength;
+                  console.log(`started downloading ${event.data.contentLength} bytes`);
+                  break;
+                case 'Progress':
+                  downloaded += event.data.chunkLength;
+                  console.log(`downloaded ${downloaded} from ${contentLength}`);
+                  break;
+                case 'Finished':
+                  console.log('download finished');
+                  break;
+              }
+            });
+
+            await message('Update installed successfully. The application will now restart.', {
+              title: 'Update Complete',
+              kind: 'info'
+            });
+            await relaunch();
+          }
+        }
+      } catch (error) {
+        console.error('Error checking for updates:', error);
+      }
+    };
+
+    checkForUpdates();
   }, []);
 
   const handleStart = async () => {
