@@ -12,16 +12,10 @@ const Dashboard = ({ config, stats, isRunning, handleStart, handleStop, onNaviga
                         Load-Nexus
                     </h2>
                     <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => onNavigate('scenarios')}
-                            className="bg-surface-border hover:bg-white/10 text-white px-3 py-1.5 rounded text-sm font-medium flex items-center gap-2 border border-white/10 transition-colors"
-                        >
-                            <span className="material-symbols-outlined text-sm">settings</span> Configure
-                        </button>
                         {!isRunning ? (
                             <button
                                 onClick={handleStart}
-                                className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded text-sm font-medium flex items-center gap-2 border border-primary transition-colors shadow-[0_0_15px_rgba(19,91,236,0.5)]"
+                                className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded text-sm font-medium flex items-center gap-2 border border-primary transition-colors shadow-[0_0_15px_rgba(255,170,0,0.4)]"
                             >
                                 <span className="material-symbols-outlined text-sm">play_circle</span> Start
                             </button>

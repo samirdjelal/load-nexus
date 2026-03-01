@@ -16,7 +16,7 @@ const HeaderStats = ({ stats, targetDuration }) => {
             <div className="flex justify-between items-end mb-2">
                 <div className="h-8 w-64 bg-surface-border relative overflow-hidden rounded-sm">
                     <div
-                        className="absolute inset-y-0 left-0 bg-accent-orange progress-stripe transition-all duration-1000 ease-linear"
+                        className="absolute inset-y-0 left-0 bg-primary progress-stripe transition-all duration-1000 ease-linear"
                         style={{ width: `${progress}%` }}
                     ></div>
                 </div>

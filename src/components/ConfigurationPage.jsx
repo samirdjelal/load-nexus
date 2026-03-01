@@ -28,18 +28,12 @@ const ConfigurationPage = ({ initialConfig, onSave, onCancel }) => {
             <header className="bg-surface-dark border-b border-surface-border flex flex-col flex-shrink-0">
                 <div className="flex items-center justify-between px-6 py-4">
                     <h2 className="text-2xl font-light text-white tracking-wide">
-                        Configuration: <span className="font-bold">Current Scenario</span>
+                        Configuration: <span className="font-bold">Scenario</span>
                     </h2>
                     <div className="flex items-center gap-3">
                         <button
-                            onClick={onCancel}
-                            className="px-4 py-1.5 rounded text-sm font-medium text-text-secondary hover:text-white transition-colors border border-surface-border hover:bg-white/5"
-                        >
-                            Cancel
-                        </button>
-                        <button
                             onClick={handleSave}
-                            className="px-4 py-1.5 rounded text-sm font-medium bg-primary hover:bg-primary/90 text-white transition-colors border border-primary shadow-[0_0_15px_rgba(19,91,236,0.5)] flex items-center gap-2"
+                            className="px-4 py-1.5 rounded text-sm font-medium bg-primary hover:bg-primary/90 text-white transition-colors border border-primary shadow-[0_0_15px_rgba(255,170,0,0.4)] flex items-center gap-2"
                         >
                             <span className="material-symbols-outlined text-sm">save</span> Apply Config
                         </button>
@@ -47,8 +41,8 @@ const ConfigurationPage = ({ initialConfig, onSave, onCancel }) => {
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto p-8 custom-scrollbar relative">
-                <div className="bg-surface-dark border border-surface-border w-full max-w-4xl mx-auto rounded-xl flex flex-col pb-8">
+            <main className="flex-1 overflow-y-auto custom-scrollbar relative">
+                <div className="bg-surface-dark w-full max-w-4xl mx-auto flex flex-col pb-8">
                     <div className="px-8 py-6 border-b border-surface-border">
                         <h3 className="text-lg font-bold text-white flex items-center gap-2">
                             <span className="material-symbols-outlined text-primary">play_circle</span> Request Details
