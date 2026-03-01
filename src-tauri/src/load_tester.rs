@@ -1,13 +1,11 @@
 use reqwest::{Client, Method, header::{HeaderMap, HeaderName, HeaderValue}};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter};
 use tokio::sync::mpsc;
-use tokio::task;
 use tokio_util::sync::CancellationToken;
 
 #[derive(Debug, Deserialize, Clone)]
@@ -16,14 +14,17 @@ pub struct LoadTestConfig {
     pub method: String,
     pub threads: usize,
     pub duration: u64,
-    pub auth_type: String, // "none" | "bearer"
+    pub auth_type: String, // "none" | "bearer" | "basic"
     pub bearer_token: Option<String>,
+    pub basic_user: Option<String>,
+    pub basic_pass: Option<String>,
     pub body_type: String, // "none" | "json" | "graphql" | "formdata"
     pub body_data: Option<String>,
     pub custom_headers: Option<String>,
 }
 
 #[derive(Debug, Serialize, Clone, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct LoadTestStats {
     pub duration: String,
     pub elapsed_secs: u64,
@@ -37,6 +38,7 @@ pub struct LoadTestStats {
     pub p95: f64,
     pub p99: f64,
     pub errors: usize,
+    pub is_running: bool,
 }
 
 pub struct LoadTestEngine {
@@ -77,12 +79,13 @@ impl LoadTestEngine {
         // Prepare headers parsing synchronously
         let mut headers = HeaderMap::new();
         if let Some(custom) = &config.custom_headers {
-            if !custom.trim().is_empty() {
-                if let Ok(json) = serde_json::from_str::<HashMap<String, String>>(custom) {
-                    for (k, v) in json {
-                        if let (Ok(name), Ok(value)) = (HeaderName::from_str(&k), HeaderValue::from_str(&v)) {
-                            headers.insert(name, value);
-                        }
+            for line in custom.lines() {
+                let parts: Vec<&str> = line.splitn(2, ':').collect();
+                if parts.len() == 2 {
+                    let k = parts[0].trim();
+                    let v = parts[1].trim();
+                    if let (Ok(name), Ok(value)) = (HeaderName::from_str(k), HeaderValue::from_str(v)) {
+                        headers.insert(name, value);
                     }
                 }
             }
@@ -93,6 +96,15 @@ impl LoadTestEngine {
                 if let Ok(value) = HeaderValue::from_str(&val) {
                     headers.insert(reqwest::header::AUTHORIZATION, value);
                 }
+            }
+        } else if config.auth_type == "basic" {
+            use base64::{Engine as _, engine::general_purpose::STANDARD};
+            let user = config.basic_user.clone().unwrap_or_default();
+            let pass = config.basic_pass.clone().unwrap_or_default();
+            let encoded = STANDARD.encode(format!("{}:{}", user, pass));
+            let val = format!("Basic {}", encoded);
+            if let Ok(value) = HeaderValue::from_str(&val) {
+                headers.insert(reqwest::header::AUTHORIZATION, value);
             }
         }
         if config.body_type == "json" || config.body_type == "graphql" {
@@ -236,6 +248,7 @@ impl LoadTestEngine {
                             p95: (p95 * 1000.0).round() / 1000.0,
                             p99: (p99 * 1000.0).round() / 1000.0,
                             errors: total_errors,
+                            is_running: true,
                         };
 
                         let _ = app.emit("load_test_progress", stats);
@@ -244,6 +257,47 @@ impl LoadTestEngine {
 
                 // Final report
                 is_running.store(false, Ordering::SeqCst);
+                
+                // Send final stats with is_running: false
+                let elapsed_secs = start_time.elapsed().as_secs();
+                let formatted_duration = format!(
+                    "{}:{:02}:{:02}",
+                    elapsed_secs / 3600,
+                    (elapsed_secs % 3600) / 60,
+                    elapsed_secs % 60
+                );
+
+                let avg = if latencies.is_empty() {
+                    0.0
+                } else {
+                    latencies.iter().sum::<f64>() / latencies.len() as f64
+                };
+
+                let mut sorted = latencies.clone();
+                sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+                
+                let p50 = if sorted.is_empty() { 0.0 } else { sorted[(sorted.len() as f64 * 0.50) as usize] };
+                let p80 = if sorted.is_empty() { 0.0 } else { sorted[(sorted.len() as f64 * 0.80) as usize] };
+                let p90 = if sorted.is_empty() { 0.0 } else { sorted[(sorted.len() as f64 * 0.90) as usize] };
+                let p95 = if sorted.is_empty() { 0.0 } else { sorted[(sorted.len() as f64 * 0.95) as usize] };
+                let p99 = if sorted.is_empty() { 0.0 } else { sorted[(sorted.len() as f64 * 0.99) as usize] };
+
+                let final_stats = LoadTestStats {
+                    duration: formatted_duration,
+                    elapsed_secs,
+                    vusers: threads,
+                    iterations: total_requests,
+                    hits: total_requests,
+                    avg_response: (avg * 1000.0).round() / 1000.0,
+                    p50: (p50 * 1000.0).round() / 1000.0,
+                    p80: (p80 * 1000.0).round() / 1000.0,
+                    p90: (p90 * 1000.0).round() / 1000.0,
+                    p95: (p95 * 1000.0).round() / 1000.0,
+                    p99: (p99 * 1000.0).round() / 1000.0,
+                    errors: total_errors,
+                    is_running: false,
+                };
+                let _ = app.emit("load_test_progress", final_stats);
             });
         });
 

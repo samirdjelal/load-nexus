@@ -1,12 +1,27 @@
 import React from 'react';
 
-const HeaderStats = ({ stats }) => {
+const HeaderStats = ({ stats, targetDuration }) => {
+    const progress = targetDuration > 0 ? Math.min((stats.elapsedSecs / targetDuration) * 100, 100) : 0;
+
+    // Format target duration as H:MM:SS
+    const formatDuration = (seconds) => {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    };
+
     return (
         <div className="px-6 py-4">
             <div className="flex justify-between items-end mb-2">
-                <div className="h-8 w-64 bg-accent-orange progress-stripe relative overflow-hidden rounded-sm"></div>
+                <div className="h-8 w-64 bg-surface-border relative overflow-hidden rounded-sm">
+                    <div
+                        className="absolute inset-y-0 left-0 bg-accent-orange progress-stripe transition-all duration-1000 ease-linear"
+                        style={{ width: `${progress}%` }}
+                    ></div>
+                </div>
                 <div className="text-white font-mono font-bold text-lg tracking-wider">
-                    {stats.duration} <span className="text-text-secondary text-base font-normal">/ 0:11:00</span>
+                    {stats.duration} <span className="text-text-secondary text-base font-normal">/ {formatDuration(targetDuration)}</span>
                 </div>
             </div>
 

@@ -27,14 +27,26 @@ const LiveChart = ({ stats }) => {
     const [history, setHistory] = useState([]);
 
     useEffect(() => {
-        if (stats.elapsed_secs > 0 && stats.elapsed_secs % 5 === 0) {
+        if (stats.elapsedSecs > 0) {
             setHistory(prev => {
-                if (prev.length > 0 && prev[prev.length - 1].elapsed_secs === stats.elapsed_secs) {
+                if (prev.length > 0 && stats.elapsedSecs < prev[prev.length - 1].elapsedSecs) {
+                    return [{
+                        time: stats.duration,
+                        elapsedSecs: stats.elapsedSecs,
+                        p50: stats.p50,
+                        p80: stats.p80,
+                        p90: stats.p90,
+                        p95: stats.p95,
+                        p99: stats.p99,
+                        avg: stats.avgResponse
+                    }];
+                }
+                if (prev.length > 0 && prev[prev.length - 1].elapsedSecs === stats.elapsedSecs) {
                     return prev;
                 }
                 const newHistory = [...prev, {
                     time: stats.duration,
-                    elapsed_secs: stats.elapsed_secs,
+                    elapsedSecs: stats.elapsedSecs,
                     p50: stats.p50,
                     p80: stats.p80,
                     p90: stats.p90,
@@ -114,11 +126,36 @@ const LiveChart = ({ stats }) => {
         animation: false,
         scales: {
             x: {
-                display: false,
+                display: true,
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.05)',
+                },
+                ticks: {
+                    color: '#9ca3af',
+                    font: {
+                        family: 'monospace',
+                        size: 10
+                    },
+                    maxTicksLimit: 8,
+                    maxRotation: 0,
+                }
             },
             y: {
-                display: false,
+                display: true,
                 min: 0,
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)',
+                },
+                border: {
+                    display: false,
+                },
+                ticks: {
+                    color: '#9ca3af',
+                    font: {
+                        family: 'monospace',
+                        size: 10
+                    },
+                }
             }
         },
         plugins: {
@@ -139,49 +176,11 @@ const LiveChart = ({ stats }) => {
 
     return (
         <div className="flex-1 bg-background-dark p-6 flex flex-col relative">
-            <div className="absolute left-6 top-10 bottom-48 w-8 flex flex-col justify-between text-[10px] font-mono text-text-secondary text-right pr-2 border-r border-surface-border/50">
-                <span>1.0</span>
-                <span>0.8</span>
-                <span>0.6</span>
-                <span>0.4</span>
-                <span>0.2</span>
-                <span>0</span>
+            <div className="h-[250px] max-h-[250px] w-full relative z-10">
+                <Line data={data} options={options} />
             </div>
 
-            <div className="ml-10 h-[400px] w-full relative">
-                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
-                    <div className="border-b border-surface-border/20 h-0 w-full"></div>
-                    <div className="border-b border-surface-border/20 h-0 w-full"></div>
-                    <div className="border-b border-surface-border/20 h-0 w-full"></div>
-                    <div className="border-b border-surface-border/20 h-0 w-full"></div>
-                    <div className="border-b border-surface-border/20 h-0 w-full"></div>
-                    <div className="border-b border-surface-border/50 h-0 w-full"></div>
-                </div>
-
-                <div className="w-full h-full relative z-10" style={{ minHeight: '400px' }}>
-                    <Line data={data} options={options} />
-                </div>
-
-                <div className="absolute bottom-0 left-0 w-full flex justify-between text-[10px] font-mono text-text-secondary pt-2 translate-y-full">
-                    {history.length > 0 ? (
-                        <>
-                            <span>{history[0]?.time}</span>
-                            {history.length > 10 && <span>{history[Math.floor(history.length * 0.33)]?.time}</span>}
-                            {history.length > 30 && <span>{history[Math.floor(history.length * 0.66)]?.time}</span>}
-                            <span>{history[history.length - 1]?.time}</span>
-                        </>
-                    ) : (
-                        <>
-                            <span>0:00</span>
-                            <span>0:01</span>
-                            <span>0:02</span>
-                            <span>0:03</span>
-                        </>
-                    )}
-                </div>
-            </div>
-
-            <div className="mt-12 ml-10 flex flex-col items-end">
+            <div className="mt-8 flex flex-col items-end">
                 <div className="w-full grid grid-cols-4 gap-x-8 text-xs font-mono border-t border-surface-border/30 pt-4">
                     <div className="pb-2 font-bold text-text-secondary">Percentile</div>
                     <div className="pb-2 font-bold text-text-secondary text-right">Current (s)</div>
