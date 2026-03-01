@@ -26,38 +26,46 @@ const HeaderStats = ({ stats, targetDuration }) => {
             </div>
 
             <div className="grid grid-cols-4 gap-px bg-surface-border mt-4 border border-surface-border rounded-sm overflow-hidden">
-                <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors">
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary">Duration</span>
-                    <span className="text-2xl font-bold text-white font-mono">{stats.duration}</span>
+                <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary relative z-10">Duration</span>
+                    <span className="text-2xl font-bold text-white font-mono relative z-10">{stats.duration}</span>
                 </div>
-                <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors">
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary">V-Users</span>
-                    <span className="text-2xl font-bold text-white font-mono">{stats.vusers} <span className="text-text-secondary text-lg">/ {stats.vusers}</span></span>
+                <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-chart-teal/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary relative z-10">V-Users</span>
+                    <span className="text-2xl font-bold text-white font-mono relative z-10">{stats.vusers} <span className="text-text-secondary text-lg">/ {stats.vusers}</span></span>
                 </div>
-                <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors">
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary">Iterations</span>
-                    <span className="text-2xl font-bold text-white font-mono">{stats.iterations}</span>
+                <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-chart-blue/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary relative z-10">Iterations</span>
+                    <span className="text-2xl font-bold text-white font-mono relative z-10">{stats.iterations}</span>
                 </div>
-                <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors">
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary">Hits</span>
-                    <span className="text-2xl font-bold text-white font-mono">{stats.hits}</span>
+                <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-chart-green/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary relative z-10">Hits</span>
+                    <span className="text-2xl font-bold text-white font-mono relative z-10">{stats.hits}</span>
                 </div>
 
-                <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors">
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary">Avg Response Time</span>
-                    <span className="text-2xl font-bold text-white font-mono">{stats.avgResponse} s</span>
+                <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-chart-purple/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary relative z-10">Avg Response Time</span>
+                    <span className="text-2xl font-bold text-white font-mono relative z-10">{stats.avgResponse} s</span>
                 </div>
-                <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors">
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary">P50 Response Time</span>
-                    <span className="text-2xl font-bold text-white font-mono">{stats.p50} s</span>
+                <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary relative z-10">P50 Response Time</span>
+                    <span className="text-2xl font-bold text-white font-mono relative z-10">{stats.p50} s</span>
                 </div>
-                <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors">
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary">P90 Response Time</span>
-                    <span className="text-2xl font-bold text-white font-mono">{stats.p90} s</span>
+                <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-chart-red/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary relative z-10">P90 Response Time</span>
+                    <span className="text-2xl font-bold text-white font-mono relative z-10">{stats.p90} s</span>
                 </div>
-                <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors">
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary">Errors</span>
-                    <span className={`text-2xl font-bold font-mono ${stats.errors > 0 ? 'text-chart-red' : 'text-white'}`}>
+                <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-chart-red/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary relative z-10">Errors</span>
+                    <span className={`text-2xl font-bold font-mono relative z-10 ${stats.errors > 0 ? 'text-chart-red' : 'text-white'}`}>
                         {stats.errors}
                     </span>
                 </div>

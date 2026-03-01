@@ -242,16 +242,17 @@ const LiveChart = ({ stats, activeTab }) => {
     };
 
     const formatBytes = (bytes, perSec = false) => {
-        if (bytes === 0) return perSec ? '0 B/s' : '0 B';
+        const numBytes = Number(bytes);
+        if (!numBytes || numBytes === 0) return perSec ? '0 B/s' : '0 B';
         const k = 1024;
         const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        const val = parseFloat((bytes / Math.pow(k, i)).toFixed(2));
+        const i = Math.floor(Math.log(numBytes) / Math.log(k));
+        const val = parseFloat((numBytes / Math.pow(k, i)).toFixed(2));
         return `${val} ${sizes[i]}${perSec ? '/s' : ''}`;
     };
 
     return (
-        <div className="flex-1 bg-background-dark p-6 flex flex-col relative">
+        <div className="flex-1 bg-background-dark p-6 flex flex-col relative min-w-0">
             <div className="h-[250px] max-h-[250px] w-full relative z-10">
                 <Line data={data} options={options} />
             </div>

@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "load-nexus",
+        "title": "Load Nexus",
         "width": 800,
         "height": 900,
         "minWidth": 800,
