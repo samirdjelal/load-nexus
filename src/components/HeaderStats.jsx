@@ -13,14 +13,14 @@ const HeaderStats = ({ stats, targetDuration }) => {
 
     return (
         <div className="px-6 py-4">
-            <div className="flex justify-between items-end mb-2">
-                <div className="h-8 w-64 bg-surface-border relative overflow-hidden rounded-sm">
+            <div className="flex items-center justify-between gap-12 mb-2">
+                <div className="h-8 w-full bg-surface-border progress-stripe-empty relative overflow-hidden rounded-sm">
                     <div
                         className="absolute inset-y-0 left-0 bg-primary progress-stripe transition-all duration-1000 ease-linear"
                         style={{ width: `${progress}%` }}
                     ></div>
                 </div>
-                <div className="text-white font-mono font-bold text-lg tracking-wider">
+                <div className="shrink-0 text-white font-mono font-bold text-lg tracking-wider">
                     {stats.duration} <span className="text-text-secondary text-base font-normal">/ {formatDuration(targetDuration)}</span>
                 </div>
             </div>
