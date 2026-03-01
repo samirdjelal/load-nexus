@@ -42,7 +42,7 @@ const ConfigurationPage = ({ initialConfig, onSave, onCancel }) => {
             </header>
 
             <main className="flex-1 overflow-y-auto custom-scrollbar relative">
-                <div className="bg-surface-dark w-full max-w-4xl mx-auto flex flex-col pb-8">
+                <div className="bg-surface-dark w-full flex flex-col pb-8">
                     <div className="px-8 py-6 border-b border-surface-border">
                         <h3 className="text-lg font-bold text-white flex items-center gap-2">
                             <span className="material-symbols-outlined text-primary">play_circle</span> Request Details

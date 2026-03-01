@@ -23,12 +23,6 @@ const Sidebar = ({ activePage, setActivePage }) => {
                             Scenarios
                         </div>
                     </button>
-                    <button className="flex items-center justify-center h-10 w-10 rounded-lg text-text-secondary hover:bg-white/5 transition-colors group relative">
-                        <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>bar_chart</span>
-                        <div className="tooltip absolute left-full ml-4 px-2 py-1 bg-surface-border text-white text-xs rounded opacity-0 invisible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none translate-x-[-10px]">
-                            Reports
-                        </div>
-                    </button>
                 </nav>
             </div>
             <div className="flex flex-col items-center py-6 gap-6 border-t border-surface-border">

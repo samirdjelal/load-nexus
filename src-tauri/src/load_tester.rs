@@ -162,7 +162,13 @@ impl LoadTestEngine {
                 let body_type = body_type.clone();
 
                 tauri::async_runtime::spawn(async move {
-                    let sent_bytes_base = body.len() as u64;
+                    // Estimate request overhead once
+                    let request_line_size = method.as_str().len() + url.len() + 11; // " HTTP/1.1\r\n"
+                    let mut header_size = 0;
+                    for (name, value) in &headers {
+                        header_size += name.as_str().len() + value.len() + 4; // ": \r\n"
+                    }
+                    let sent_bytes_base = (request_line_size + header_size + body.len() + 2) as u64;
 
                     loop {
                         if cancel.is_cancelled() || start_time.elapsed() >= duration {
@@ -183,8 +189,10 @@ impl LoadTestEngine {
                         let success = match res {
                             Ok(r) => {
                                 let ok = r.status().is_success();
-                                // Try to get content length
-                                recv_bytes = r.content_length().unwrap_or(0);
+                                // Consuming the body to get actual byte count
+                                if let Ok(b) = r.bytes().await {
+                                    recv_bytes = b.len() as u64;
+                                }
                                 ok
                             },
                             Err(_) => false,

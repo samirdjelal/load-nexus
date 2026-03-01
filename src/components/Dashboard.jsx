@@ -36,13 +36,13 @@ const Dashboard = ({ config, stats, isRunning, handleStart, handleStop, onNaviga
                 <div className="px-6 flex items-end gap-1 mt-2">
                     <button
                         onClick={() => setActiveTab('percentiles')}
-                        className={`px-6 py-3 text-sm font-bold transition-all ${activeTab === 'percentiles' ? 'text-white bg-surface-dark border-t-2 border-chart-teal relative top-[1px] shadow-[0_-2px_10px_rgba(0,0,0,0.2)]' : 'text-text-secondary hover:text-white bg-transparent border-b-2 border-transparent'}`}
+                        className={`px-6 py-3 text-sm font-bold ${activeTab === 'percentiles' ? 'text-white bg-surface-dark border-t-2 border-chart-teal relative top-[1px] shadow-[0_-2px_10px_rgba(0,0,0,0.2)]' : 'text-text-secondary hover:text-white bg-transparent border-b-2 border-transparent'}`}
                     >
                         Response Time Percentiles
                     </button>
                     <button
                         onClick={() => setActiveTab('throughput')}
-                        className={`px-6 py-3 text-sm font-bold transition-all ${activeTab === 'throughput' ? 'text-white bg-surface-dark border-t-2 border-primary relative top-[1px] shadow-[0_-2px_10px_rgba(0,0,0,0.2)]' : 'text-text-secondary hover:text-white bg-transparent border-b-2 border-transparent'}`}
+                        className={`px-6 py-3 text-sm font-bold ${activeTab === 'throughput' ? 'text-white bg-surface-dark border-t-2 border-primary relative top-[1px] shadow-[0_-2px_10px_rgba(0,0,0,0.2)]' : 'text-text-secondary hover:text-white bg-transparent border-b-2 border-transparent'}`}
                     >
                         Network Throughput
                     </button>

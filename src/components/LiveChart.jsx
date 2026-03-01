@@ -241,6 +241,15 @@ const LiveChart = ({ stats, activeTab }) => {
         }
     };
 
+    const formatBytes = (bytes, perSec = false) => {
+        if (bytes === 0) return perSec ? '0 B/s' : '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        const val = parseFloat((bytes / Math.pow(k, i)).toFixed(2));
+        return `${val} ${sizes[i]}${perSec ? '/s' : ''}`;
+    };
+
     return (
         <div className="flex-1 bg-background-dark p-6 flex flex-col relative">
             <div className="h-[250px] max-h-[250px] w-full relative z-10">
@@ -315,17 +324,17 @@ const LiveChart = ({ stats, activeTab }) => {
                                 <div className="w-3 h-3 rounded-full bg-[#fb923c]"></div>
                                 <span className="text-text-primary">Sent</span>
                             </div>
-                            <div className="py-1.5 text-right text-text-primary">{(stats.bytesSentPerSec / (1024 * 1024)).toFixed(2)} MB/s</div>
-                            <div className="py-1.5 text-right text-text-primary">{(getMax('sent') / (1024 * 1024)).toFixed(2)} MB/s</div>
-                            <div className="py-1.5 text-right text-text-primary">{(stats.totalBytesSent / (1024 * 1024)).toFixed(2)} MB</div>
+                            <div className="py-1.5 text-right text-text-primary">{formatBytes(stats.bytesSentPerSec, true)}</div>
+                            <div className="py-1.5 text-right text-text-primary">{formatBytes(getMax('sent'), true)}</div>
+                            <div className="py-1.5 text-right text-text-primary">{formatBytes(stats.totalBytesSent)}</div>
 
                             <div className="py-1.5 flex items-center gap-2">
                                 <div className="w-3 h-3 rounded-full bg-[#2dd4bf]"></div>
                                 <span className="text-text-primary">Recv</span>
                             </div>
-                            <div className="py-1.5 text-right text-text-primary">{(stats.bytesRecvPerSec / (1024 * 1024)).toFixed(2)} MB/s</div>
-                            <div className="py-1.5 text-right text-text-primary">{(getMax('recv') / (1024 * 1024)).toFixed(2)} MB/s</div>
-                            <div className="py-1.5 text-right text-text-primary">{(stats.totalBytesRecv / (1024 * 1024)).toFixed(2)} MB</div>
+                            <div className="py-1.5 text-right text-text-primary">{formatBytes(stats.bytesRecvPerSec, true)}</div>
+                            <div className="py-1.5 text-right text-text-primary">{formatBytes(getMax('recv'), true)}</div>
+                            <div className="py-1.5 text-right text-text-primary">{formatBytes(stats.totalBytesRecv)}</div>
                         </>
                     )}
                 </div>
