@@ -34,7 +34,12 @@ function App() {
     p90: 0,
     p95: 0,
     p99: 0,
-    errors: 0
+    errors: 0,
+    rps: 0,
+    bytesSentPerSec: 0,
+    bytesRecvPerSec: 0,
+    totalBytesSent: 0,
+    totalBytesRecv: 0
   });
 
   useEffect(() => {

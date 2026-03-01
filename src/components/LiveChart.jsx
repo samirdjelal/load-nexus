@@ -23,7 +23,7 @@ ChartJS.register(
     Filler
 );
 
-const LiveChart = ({ stats }) => {
+const LiveChart = ({ stats, activeTab }) => {
     const [history, setHistory] = useState([]);
 
     useEffect(() => {
@@ -38,7 +38,10 @@ const LiveChart = ({ stats }) => {
                         p90: stats.p90,
                         p95: stats.p95,
                         p99: stats.p99,
-                        avg: stats.avgResponse
+                        avg: stats.avgResponse,
+                        rps: stats.rps,
+                        sent: stats.bytesSentPerSec,
+                        recv: stats.bytesRecvPerSec
                     }];
                 }
                 if (prev.length > 0 && prev[prev.length - 1].elapsedSecs === stats.elapsedSecs) {
@@ -52,7 +55,10 @@ const LiveChart = ({ stats }) => {
                     p90: stats.p90,
                     p95: stats.p95,
                     p99: stats.p99,
-                    avg: stats.avgResponse
+                    avg: stats.avgResponse,
+                    rps: stats.rps,
+                    sent: stats.bytesSentPerSec,
+                    recv: stats.bytesRecvPerSec
                 }];
                 return newHistory;
             });
@@ -63,7 +69,7 @@ const LiveChart = ({ stats }) => {
 
     const data = {
         labels: history.map(d => d.time),
-        datasets: [
+        datasets: activeTab === 'percentiles' ? [
             {
                 label: 'P99 (s)',
                 data: history.map(d => d.p99),
@@ -114,6 +120,40 @@ const LiveChart = ({ stats }) => {
                 pointRadius: 0,
                 borderWidth: 2,
             }
+        ] : [
+            {
+                label: 'RPS',
+                data: history.map(d => d.rps),
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                fill: false,
+                tension: 0.4,
+                pointRadius: 0,
+                borderWidth: 2,
+                yAxisID: 'y',
+            },
+            {
+                label: 'Sent (MB/s)',
+                data: history.map(d => d.sent / (1024 * 1024)),
+                borderColor: '#fb923c',
+                backgroundColor: 'rgba(251, 146, 60, 0.1)',
+                fill: false,
+                tension: 0.4,
+                pointRadius: 0,
+                borderWidth: 2,
+                yAxisID: 'y1',
+            },
+            {
+                label: 'Recv (MB/s)',
+                data: history.map(d => d.recv / (1024 * 1024)),
+                borderColor: '#2dd4bf',
+                backgroundColor: 'rgba(45, 212, 191, 0.1)',
+                fill: false,
+                tension: 0.4,
+                pointRadius: 0,
+                borderWidth: 2,
+                yAxisID: 'y1',
+            }
         ],
     };
 
@@ -143,11 +183,38 @@ const LiveChart = ({ stats }) => {
             y: {
                 display: true,
                 min: 0,
+                title: {
+                    display: activeTab === 'throughput',
+                    text: 'Req / s',
+                    color: '#9ca3af',
+                    font: { size: 10 }
+                },
                 grid: {
                     color: 'rgba(255, 255, 255, 0.1)',
                 },
                 border: {
                     display: false,
+                },
+                ticks: {
+                    color: '#9ca3af',
+                    font: {
+                        family: 'monospace',
+                        size: 10
+                    },
+                }
+            },
+            y1: {
+                display: activeTab === 'throughput',
+                position: 'right',
+                min: 0,
+                title: {
+                    display: true,
+                    text: 'MB / s',
+                    color: '#9ca3af',
+                    font: { size: 10 }
+                },
+                grid: {
+                    drawOnChartArea: false,
                 },
                 ticks: {
                     color: '#9ca3af',
@@ -182,50 +249,85 @@ const LiveChart = ({ stats }) => {
 
             <div className="mt-8 flex flex-col items-end">
                 <div className="w-full grid grid-cols-4 gap-x-8 text-xs font-mono border-t border-surface-border/30 pt-4">
-                    <div className="pb-2 font-bold text-text-secondary">Percentile</div>
-                    <div className="pb-2 font-bold text-text-secondary text-right">Current (s)</div>
-                    <div className="pb-2 font-bold text-text-secondary text-right">Max (s)</div>
-                    <div className="pb-2 font-bold text-text-secondary text-right">Overall (s)</div>
+                    {activeTab === 'percentiles' ? (
+                        <>
+                            <div className="pb-2 font-bold text-text-secondary">Percentile</div>
+                            <div className="pb-2 font-bold text-text-secondary text-right">Current (s)</div>
+                            <div className="pb-2 font-bold text-text-secondary text-right">Max (s)</div>
+                            <div className="pb-2 font-bold text-text-secondary text-right">Overall (s)</div>
 
-                    <div className="py-1.5 flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-[#bef264]"></div>
-                        <span className="text-text-primary">p99</span>
-                    </div>
-                    <div className="py-1.5 text-right text-text-primary">{stats.p99?.toFixed(2) || '0.00'}</div>
-                    <div className="py-1.5 text-right text-text-primary">{getMax('p99')}</div>
-                    <div className="py-1.5 text-right text-text-primary">{getOverall('p99')}</div>
+                            <div className="py-1.5 flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-[#bef264]"></div>
+                                <span className="text-text-primary">p99</span>
+                            </div>
+                            <div className="py-1.5 text-right text-text-primary">{stats.p99?.toFixed(2) || '0.00'}</div>
+                            <div className="py-1.5 text-right text-text-primary">{getMax('p99')}</div>
+                            <div className="py-1.5 text-right text-text-primary">{getOverall('p99')}</div>
 
-                    <div className="py-1.5 flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-[#f87171]"></div>
-                        <span className="text-text-primary">p95</span>
-                    </div>
-                    <div className="py-1.5 text-right text-text-primary">{stats.p95?.toFixed(2) || '0.00'}</div>
-                    <div className="py-1.5 text-right text-text-primary">{getMax('p95')}</div>
-                    <div className="py-1.5 text-right text-text-primary">{getOverall('p95')}</div>
+                            <div className="py-1.5 flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-[#f87171]"></div>
+                                <span className="text-text-primary">p95</span>
+                            </div>
+                            <div className="py-1.5 text-right text-text-primary">{stats.p95?.toFixed(2) || '0.00'}</div>
+                            <div className="py-1.5 text-right text-text-primary">{getMax('p95')}</div>
+                            <div className="py-1.5 text-right text-text-primary">{getOverall('p95')}</div>
 
-                    <div className="py-1.5 flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-[#2dd4bf]"></div>
-                        <span className="text-text-primary">p90</span>
-                    </div>
-                    <div className="py-1.5 text-right text-text-primary">{stats.p90?.toFixed(2) || '0.00'}</div>
-                    <div className="py-1.5 text-right text-text-primary">{getMax('p90')}</div>
-                    <div className="py-1.5 text-right text-text-primary">{getOverall('p90')}</div>
+                            <div className="py-1.5 flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-[#2dd4bf]"></div>
+                                <span className="text-text-primary">p90</span>
+                            </div>
+                            <div className="py-1.5 text-right text-text-primary">{stats.p90?.toFixed(2) || '0.00'}</div>
+                            <div className="py-1.5 text-right text-text-primary">{getMax('p90')}</div>
+                            <div className="py-1.5 text-right text-text-primary">{getOverall('p90')}</div>
 
-                    <div className="py-1.5 flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-[#fb923c]"></div>
-                        <span className="text-text-primary">p80</span>
-                    </div>
-                    <div className="py-1.5 text-right text-text-primary">{stats.p80?.toFixed(2) || '0.00'}</div>
-                    <div className="py-1.5 text-right text-text-primary">{getMax('p80')}</div>
-                    <div className="py-1.5 text-right text-text-primary">{getOverall('p80')}</div>
+                            <div className="py-1.5 flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-[#fb923c]"></div>
+                                <span className="text-text-primary">p80</span>
+                            </div>
+                            <div className="py-1.5 text-right text-text-primary">{stats.p80?.toFixed(2) || '0.00'}</div>
+                            <div className="py-1.5 text-right text-text-primary">{getMax('p80')}</div>
+                            <div className="py-1.5 text-right text-text-primary">{getOverall('p80')}</div>
 
-                    <div className="py-1.5 flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-[#a78bfa]"></div>
-                        <span className="text-text-primary">p50</span>
-                    </div>
-                    <div className="py-1.5 text-right text-text-primary">{stats.p50?.toFixed(2) || '0.00'}</div>
-                    <div className="py-1.5 text-right text-text-primary">{getMax('p50')}</div>
-                    <div className="py-1.5 text-right text-text-primary">{getOverall('p50')}</div>
+                            <div className="py-1.5 flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-[#a78bfa]"></div>
+                                <span className="text-text-primary">p50</span>
+                            </div>
+                            <div className="py-1.5 text-right text-text-primary">{stats.p50?.toFixed(2) || '0.00'}</div>
+                            <div className="py-1.5 text-right text-text-primary">{getMax('p50')}</div>
+                            <div className="py-1.5 text-right text-text-primary">{getOverall('p50')}</div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="pb-2 font-bold text-text-secondary">Metric</div>
+                            <div className="pb-2 font-bold text-text-secondary text-right">Current</div>
+                            <div className="pb-2 font-bold text-text-secondary text-right">Max</div>
+                            <div className="pb-2 font-bold text-text-secondary text-right">Total</div>
+
+                            <div className="py-1.5 flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-[#3b82f6]"></div>
+                                <span className="text-text-primary">RPS</span>
+                            </div>
+                            <div className="py-1.5 text-right text-text-primary">{stats.rps?.toFixed(2) || '0.00'}</div>
+                            <div className="py-1.5 text-right text-text-primary">{getMax('rps')}</div>
+                            <div className="py-1.5 text-right text-text-primary">{stats.iterations || 0} hits</div>
+
+                            <div className="py-1.5 flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-[#fb923c]"></div>
+                                <span className="text-text-primary">Sent</span>
+                            </div>
+                            <div className="py-1.5 text-right text-text-primary">{(stats.bytesSentPerSec / (1024 * 1024)).toFixed(2)} MB/s</div>
+                            <div className="py-1.5 text-right text-text-primary">{(getMax('sent') / (1024 * 1024)).toFixed(2)} MB/s</div>
+                            <div className="py-1.5 text-right text-text-primary">{(stats.totalBytesSent / (1024 * 1024)).toFixed(2)} MB</div>
+
+                            <div className="py-1.5 flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-[#2dd4bf]"></div>
+                                <span className="text-text-primary">Recv</span>
+                            </div>
+                            <div className="py-1.5 text-right text-text-primary">{(stats.bytesRecvPerSec / (1024 * 1024)).toFixed(2)} MB/s</div>
+                            <div className="py-1.5 text-right text-text-primary">{(getMax('recv') / (1024 * 1024)).toFixed(2)} MB/s</div>
+                            <div className="py-1.5 text-right text-text-primary">{(stats.totalBytesRecv / (1024 * 1024)).toFixed(2)} MB</div>
+                        </>
+                    )}
                 </div>
             </div>
         </div>

@@ -39,6 +39,11 @@ pub struct LoadTestStats {
     pub p99: f64,
     pub errors: usize,
     pub is_running: bool,
+    pub rps: f64,
+    pub bytes_sent_per_sec: f64,
+    pub bytes_recv_per_sec: f64,
+    pub total_bytes_sent: u64,
+    pub total_bytes_recv: u64,
 }
 
 pub struct LoadTestEngine {
@@ -127,7 +132,7 @@ impl LoadTestEngine {
         let threads = config.threads;
 
         tauri::async_runtime::spawn(async move {
-            let mut builder = Client::builder()
+            let builder = Client::builder()
                 .timeout(Duration::from_secs(30))
                 .pool_idle_timeout(Duration::from_secs(15))
                 .pool_max_idle_per_host(threads);
@@ -141,7 +146,8 @@ impl LoadTestEngine {
                 }
             };
 
-            let (tx, mut rx) = mpsc::channel::<(bool, f64)>(10000);
+            // (success, latency, sent_bytes, recv_bytes)
+            let (tx, mut rx) = mpsc::channel::<(bool, f64, u64, u64)>(10000);
             let start_time = Instant::now();
 
             // Spawn workers
@@ -156,6 +162,8 @@ impl LoadTestEngine {
                 let body_type = body_type.clone();
 
                 tauri::async_runtime::spawn(async move {
+                    let sent_bytes_base = body.len() as u64;
+
                     loop {
                         if cancel.is_cancelled() || start_time.elapsed() >= duration {
                             break;
@@ -171,12 +179,18 @@ impl LoadTestEngine {
                         let res = req.send().await;
                         let elapsed = req_start.elapsed().as_secs_f64();
 
+                        let mut recv_bytes = 0;
                         let success = match res {
-                            Ok(r) => r.status().is_success(),
+                            Ok(r) => {
+                                let ok = r.status().is_success();
+                                // Try to get content length
+                                recv_bytes = r.content_length().unwrap_or(0);
+                                ok
+                            },
                             Err(_) => false,
                         };
 
-                        if tx.send((success, elapsed)).await.is_err() {
+                        if tx.send((success, elapsed, sent_bytes_base, recv_bytes)).await.is_err() {
                             break;
                         }
                     }
@@ -191,16 +205,25 @@ impl LoadTestEngine {
                 let mut total_errors = 0;
                 let mut latencies = Vec::new();
                 
+                let mut total_bytes_sent = 0;
+                let mut total_bytes_recv = 0;
+
+                let mut last_total_requests = 0;
+                let mut last_total_bytes_sent = 0;
+                let mut last_total_bytes_recv = 0;
+
                 let mut last_report = Instant::now();
 
                 loop {
                     tokio::select! {
-                        Some((success, latency)) = rx.recv() => {
+                        Some((success, latency, sent, recv)) = rx.recv() => {
                             total_requests += 1;
                             if !success {
                                 total_errors += 1;
                             }
                             latencies.push(latency);
+                            total_bytes_sent += sent;
+                            total_bytes_recv += recv;
                         }
                         _ = tokio::time::sleep(Duration::from_millis(500)) => {
                             if rx.is_empty() && (reporter_cancel.is_cancelled() || start_time.elapsed() >= duration) {
@@ -210,7 +233,17 @@ impl LoadTestEngine {
                     }
 
                     if last_report.elapsed() >= Duration::from_secs(1) {
-                        last_report = Instant::now();
+                        let now = Instant::now();
+                        let interval = now.duration_since(last_report).as_secs_f64();
+                        
+                        let rps = (total_requests - last_total_requests) as f64 / interval;
+                        let bs_ps = (total_bytes_sent - last_total_bytes_sent) as f64 / interval;
+                        let br_ps = (total_bytes_recv - last_total_bytes_recv) as f64 / interval;
+
+                        last_total_requests = total_requests;
+                        last_total_bytes_sent = total_bytes_sent;
+                        last_total_bytes_recv = total_bytes_recv;
+                        last_report = now;
                         
                         let elapsed_secs = start_time.elapsed().as_secs();
                         let formatted_duration = format!(
@@ -249,6 +282,11 @@ impl LoadTestEngine {
                             p99: (p99 * 1000.0).round() / 1000.0,
                             errors: total_errors,
                             is_running: true,
+                            rps,
+                            bytes_sent_per_sec: bs_ps,
+                            bytes_recv_per_sec: br_ps,
+                            total_bytes_sent,
+                            total_bytes_recv,
                         };
 
                         let _ = app.emit("load_test_progress", stats);
@@ -296,6 +334,11 @@ impl LoadTestEngine {
                     p99: (p99 * 1000.0).round() / 1000.0,
                     errors: total_errors,
                     is_running: false,
+                    rps: 0.0,
+                    bytes_sent_per_sec: 0.0,
+                    bytes_recv_per_sec: 0.0,
+                    total_bytes_sent,
+                    total_bytes_recv,
                 };
                 let _ = app.emit("load_test_progress", final_stats);
             });

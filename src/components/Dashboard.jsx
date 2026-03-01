@@ -3,6 +3,7 @@ import HeaderStats from './HeaderStats';
 import LiveChart from './LiveChart';
 
 const Dashboard = ({ config, stats, isRunning, handleStart, handleStop, onNavigate }) => {
+    const [activeTab, setActiveTab] = React.useState('percentiles');
 
     return (
         <div className="flex-1 flex flex-col h-full overflow-hidden bg-background-dark relative">
@@ -33,10 +34,16 @@ const Dashboard = ({ config, stats, isRunning, handleStart, handleStop, onNaviga
                 <HeaderStats stats={stats} targetDuration={config.duration} />
 
                 <div className="px-6 flex items-end gap-1 mt-2">
-                    <button className="px-6 py-3 text-sm font-bold text-white bg-surface-dark border-t-2 border-chart-teal relative top-[1px] shadow-[0_-2px_10px_rgba(0,0,0,0.2)]">
+                    <button
+                        onClick={() => setActiveTab('percentiles')}
+                        className={`px-6 py-3 text-sm font-bold transition-all ${activeTab === 'percentiles' ? 'text-white bg-surface-dark border-t-2 border-chart-teal relative top-[1px] shadow-[0_-2px_10px_rgba(0,0,0,0.2)]' : 'text-text-secondary hover:text-white bg-transparent border-b-2 border-transparent'}`}
+                    >
                         Response Time Percentiles
                     </button>
-                    <button className="px-6 py-3 text-sm font-medium text-text-secondary hover:text-white transition-colors bg-transparent border-b-2 border-transparent">
+                    <button
+                        onClick={() => setActiveTab('throughput')}
+                        className={`px-6 py-3 text-sm font-bold transition-all ${activeTab === 'throughput' ? 'text-white bg-surface-dark border-t-2 border-primary relative top-[1px] shadow-[0_-2px_10px_rgba(0,0,0,0.2)]' : 'text-text-secondary hover:text-white bg-transparent border-b-2 border-transparent'}`}
+                    >
                         Network Throughput
                     </button>
                 </div>
@@ -44,7 +51,7 @@ const Dashboard = ({ config, stats, isRunning, handleStart, handleStop, onNaviga
 
             <main className="flex-1 overflow-y-auto p-0 custom-scrollbar bg-background-dark relative">
                 <div className="w-full h-full flex flex-col md:flex-row">
-                    <LiveChart stats={stats} />
+                    <LiveChart stats={stats} activeTab={activeTab} />
                 </div>
             </main>
         </div>
