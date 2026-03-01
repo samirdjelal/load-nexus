@@ -1,4 +1,3 @@
-![Load Nexus Banner](images/banner.png)
 
 # 🚀 Load Nexus
 
@@ -14,11 +13,9 @@
 -   **Advanced Authentication**: Seamlessly handle Bearer tokens and Basic Auth.
 -   **Visual Excellence**: Modern, glassmorphic UI with dynamic charts and responsive design.
 
-## 📸 Screenshots
+## 📸 Screenshot
 
-| Dashboard Overview | Configuration & Scenarios |
-| :---: | :---: |
-| ![Dashboard](images/1.png) | ![Configuration](images/2.png) |
+![Dashboard](images/1.png)
 
 ## 🎯 Use Cases
 
