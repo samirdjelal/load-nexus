@@ -85,36 +85,56 @@ const ConfigurationPage = ({ initialConfig, onSave, onCancel }) => {
                     <h2 className="text-2xl font-light text-white tracking-wide">
                         Scenario Details
                     </h2>
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={handleImportProject}
-                            className="px-4 py-1.5 rounded text-sm font-medium text-text-secondary hover:text-white transition-colors flex items-center gap-2"
-                        >
-                            <span className="material-symbols-outlined text-sm">folder_open</span> Load Project
-                        </button>
-                        <button
-                            onClick={() => setIsCurlModalOpen(true)}
-                            className="px-4 py-1.5 rounded text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-2 border border-primary/30"
-                        >
-                            <span className="material-symbols-outlined text-sm">terminal</span> Fill from cURL
-                        </button>
-                        <button
-                            onClick={handleExportProject}
-                            className="px-4 py-1.5 rounded text-sm font-medium text-text-secondary hover:text-white transition-colors flex items-center gap-2 border border-surface-border"
-                        >
-                            <span className="material-symbols-outlined text-sm">save_as</span> Save Project
-                        </button>
+                    <div className="flex items-center gap-2">
+                        {/* Utility actions group */}
+                        <div className="flex items-center bg-background-dark/60 border border-surface-border/60 rounded-lg p-1 gap-0.5">
+                            <button
+                                onClick={handleImportProject}
+                                title="Load Project"
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-text-secondary hover:text-white hover:bg-surface-border/50 transition-all duration-150"
+                            >
+                                <span className="material-symbols-outlined" style={{fontSize:'16px'}}>folder_open</span>
+                                <span className="hidden sm:inline">Load</span>
+                            </button>
+                            <div className="w-px h-4 bg-surface-border/60" />
+                            <button
+                                onClick={() => setIsCurlModalOpen(true)}
+                                title="Fill from cURL"
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-primary hover:text-primary/80 hover:bg-primary/10 transition-all duration-150"
+                            >
+                                <span className="material-symbols-outlined" style={{fontSize:'16px'}}>terminal</span>
+                                <span className="hidden sm:inline">cURL</span>
+                            </button>
+                            <div className="w-px h-4 bg-surface-border/60" />
+                            <button
+                                onClick={handleExportProject}
+                                title="Save Project"
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-text-secondary hover:text-white hover:bg-surface-border/50 transition-all duration-150"
+                            >
+                                <span className="material-symbols-outlined" style={{fontSize:'16px'}}>save_as</span>
+                                <span className="hidden sm:inline">Save</span>
+                            </button>
+                        </div>
+
+                        {/* Separator */}
+                        <div className="w-px h-5 bg-surface-border/40 mx-1" />
+
+                        {/* Cancel */}
                         <button
                             onClick={handleCancel}
-                            className="px-4 py-1.5 rounded text-sm font-medium text-text-secondary hover:text-white transition-colors ml-4"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-white hover:bg-surface-border/40 transition-all duration-150"
                         >
-                            Cancel
+                            <span className="material-symbols-outlined" style={{fontSize:'15px'}}>close</span>
+                            <span className="hidden sm:inline">Cancel</span>
                         </button>
+
+                        {/* Primary action */}
                         <button
                             onClick={handleSaveConfig}
-                            className="px-4 py-1.5 rounded text-sm font-medium bg-primary hover:bg-primary/90 text-white transition-colors border border-primary shadow-[0_0_15px_rgba(255,170,0,0.4)] flex items-center gap-2"
+                            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-primary hover:bg-primary/90 text-white transition-all duration-150 border border-primary/80 shadow-[0_0_12px_rgba(255,170,0,0.35)] hover:shadow-[0_0_18px_rgba(255,170,0,0.5)]"
                         >
-                            <span className="material-symbols-outlined text-sm">play_arrow</span> Apply Config
+                            <span className="material-symbols-outlined" style={{fontSize:'15px'}}>check_circle</span>
+                            Apply
                         </button>
                     </div>
                 </div>
