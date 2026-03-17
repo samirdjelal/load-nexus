@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { open } from '@tauri-apps/plugin-dialog';
+import { open, save } from '@tauri-apps/plugin-dialog';
+import { invoke } from '@tauri-apps/api/core';
+import { parseCurlCommand } from '../utils/curlParser';
 
 const ConfigurationPage = ({ initialConfig, onSave, onCancel }) => {
     const [config, setConfig] = useState(initialConfig || {
@@ -18,16 +20,62 @@ const ConfigurationPage = ({ initialConfig, onSave, onCancel }) => {
         customHeaders: ''
     });
 
+    const [isCurlModalOpen, setIsCurlModalOpen] = useState(false);
+    const [curlInput, setCurlInput] = useState('');
+
     const handleChange = (e) => {
         setConfig({ ...config, [e.target.name]: e.target.value });
     };
 
-    const handleSave = () => {
+    const handleSaveConfig = () => {
         onSave(config);
     };
 
     const handleCancel = () => {
         if (onCancel) onCancel();
+    };
+
+    const handleExportProject = async () => {
+        try {
+            const filePath = await save({
+                filters: [{ name: 'Nexus Project', extensions: ['nexus', 'json'] }],
+                defaultPath: 'my_scenario.nexus'
+            });
+            if (filePath) {
+                await invoke('save_report', { path: filePath, content: JSON.stringify(config, null, 2) });
+            }
+        } catch (error) {
+            console.error('Failed to export project:', error);
+        }
+    };
+
+    const handleImportProject = async () => {
+        try {
+            const selected = await open({
+                filters: [{ name: 'Nexus Project', extensions: ['nexus', 'json'] }],
+                multiple: false
+            });
+            if (selected) {
+                const content = await invoke('load_file', { path: selected });
+                setConfig(JSON.parse(content));
+            }
+        } catch (error) {
+            console.error('Failed to import project:', error);
+        }
+    };
+
+    const handleApplyCurl = () => {
+        const parsedConfig = parseCurlCommand(curlInput);
+        if (parsedConfig) {
+            setConfig({
+                ...config,
+                ...parsedConfig
+            });
+            setIsCurlModalOpen(false);
+            setCurlInput('');
+        } else {
+            alert('Invalid cURL command or empty input.');
+        }
     };
 
     return (
@@ -39,16 +87,34 @@ const ConfigurationPage = ({ initialConfig, onSave, onCancel }) => {
                     </h2>
                     <div className="flex items-center gap-3">
                         <button
+                            onClick={handleImportProject}
+                            className="px-4 py-1.5 rounded text-sm font-medium text-text-secondary hover:text-white transition-colors flex items-center gap-2"
+                        >
+                            <span className="material-symbols-outlined text-sm">folder_open</span> Load Project
+                        </button>
+                        <button
+                            onClick={() => setIsCurlModalOpen(true)}
+                            className="px-4 py-1.5 rounded text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-2 border border-primary/30"
+                        >
+                            <span className="material-symbols-outlined text-sm">terminal</span> Fill from cURL
+                        </button>
+                        <button
+                            onClick={handleExportProject}
+                            className="px-4 py-1.5 rounded text-sm font-medium text-text-secondary hover:text-white transition-colors flex items-center gap-2 border border-surface-border"
+                        >
+                            <span className="material-symbols-outlined text-sm">save_as</span> Save Project
+                        </button>
+                        <button
                             onClick={handleCancel}
-                            className="px-4 py-1.5 rounded text-sm font-medium text-text-secondary hover:text-white transition-colors"
+                            className="px-4 py-1.5 rounded text-sm font-medium text-text-secondary hover:text-white transition-colors ml-4"
                         >
                             Cancel
                         </button>
                         <button
-                            onClick={handleSave}
+                            onClick={handleSaveConfig}
                             className="px-4 py-1.5 rounded text-sm font-medium bg-primary hover:bg-primary/90 text-white transition-colors border border-primary shadow-[0_0_15px_rgba(255,170,0,0.4)] flex items-center gap-2"
                         >
-                            <span className="material-symbols-outlined text-sm">save</span> Apply Config
+                            <span className="material-symbols-outlined text-sm">play_arrow</span> Apply Config
                         </button>
                     </div>
                 </div>
@@ -128,6 +194,18 @@ const ConfigurationPage = ({ initialConfig, onSave, onCancel }) => {
                                         min="1"
                                     />
                                 </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">Ramp-up (Sec)</label>
+                                    <input
+                                        type="number"
+                                        name="ramp_up_secs"
+                                        value={config.ramp_up_secs || ''}
+                                        onChange={(e) => setConfig({...config, ramp_up_secs: e.target.value ? parseInt(e.target.value) : null})}
+                                        className="w-full bg-background-dark/50 border border-surface-border/50 rounded-md p-3 text-white focus:outline-none focus:ring-2 focus:ring-chart-teal/40 focus:border-chart-teal/60 transition-all text-sm font-mono"
+                                        min="0"
+                                        placeholder="0"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -196,6 +274,113 @@ const ConfigurationPage = ({ initialConfig, onSave, onCancel }) => {
                                     </div>
                                 </div>
                             )}
+                        </div>
+                    </div>
+
+                    {/* Data & Variables Card */}
+                    <div className="bg-surface-dark border border-surface-border rounded-lg p-6 shadow-lg mb-6 relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                        <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider mb-6 flex items-center gap-2">
+                            <span className="material-symbols-outlined text-blue-400 text-xl">dataset</span> Data & Variables
+                        </h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">Environment Variables</label>
+                                <textarea
+                                    value={config.env_vars ? Object.entries(config.env_vars).map(([k,v]) => `${k}=${v}`).join('\n') : ''}
+                                    onChange={(e) => {
+                                        const lines = e.target.value.split('\n');
+                                        const vars = {};
+                                        lines.forEach(line => {
+                                            const [k, ...v] = line.split('=');
+                                            if (k && v.length) vars[k.trim()] = v.join('=').trim();
+                                        });
+                                        setConfig({...config, env_vars: Object.keys(vars).length > 0 ? vars : null});
+                                    }}
+                                    className="w-full bg-background-dark/50 border border-surface-border/50 rounded-md p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-400/60 transition-all text-sm font-mono h-24"
+                                    placeholder="BASE_URL=https://api.example.com&#10;TOKEN=secret123"
+                                />
+                                <p className="text-xs text-text-secondary mt-1">Use as {'{{'}VAR_NAME{'}}'} in URL, Headers, or Body</p>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">CSV Data Source</label>
+                                <div className="flex flex-col items-center justify-center border-2 border-dashed border-surface-border/50 rounded-md bg-background-dark/20 p-4 relative group h-24">
+                                    <button
+                                        onClick={async () => {
+                                            const selected = await open({
+                                                multiple: false,
+                                                filters: [{ name: 'CSV', extensions: ['csv'] }]
+                                            });
+                                            if (selected) {
+                                                setConfig({ ...config, csv_data_path: selected });
+                                            }
+                                        }}
+                                        className="px-4 py-1.5 rounded-md text-xs font-medium bg-surface-dark hover:bg-surface-border text-white transition-all border border-surface-border shadow-md flex items-center gap-2 mb-2"
+                                    >
+                                        <span className="material-symbols-outlined text-blue-400 text-sm">upload_file</span>
+                                        Select CSV
+                                    </button>
+                                    {config.csv_data_path ? (
+                                        <p className="text-xs text-white font-mono truncate max-w-full" title={config.csv_data_path}>
+                                            {config.csv_data_path.split('\\').pop().split('/').pop()}
+                                        </p>
+                                    ) : (
+                                        <p className="text-xs text-text-secondary font-mono">No CSV selected</p>
+                                    )}
+                                </div>
+                                <p className="text-xs text-text-secondary mt-1">Columns map to {'{{'}column_name{'}}'} variables, iterated sequentially.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Assertions Card */}
+                    <div className="bg-surface-dark border border-surface-border rounded-lg p-6 shadow-lg mb-6 relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                        <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider mb-6 flex items-center gap-2">
+                            <span className="material-symbols-outlined text-red-400 text-xl">rule</span> Response Assertions
+                        </h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">Expected Status</label>
+                                <input
+                                    type="number"
+                                    value={config.assertions?.status_code || ''}
+                                    onChange={(e) => setConfig({
+                                        ...config,
+                                        assertions: { ...config.assertions, status_code: e.target.value ? parseInt(e.target.value) : null }
+                                    })}
+                                    className="w-full bg-background-dark/50 border border-surface-border/50 rounded-md p-3 text-white focus:outline-none focus:ring-2 focus:ring-red-400/40 focus:border-red-400/60 transition-all text-sm font-mono"
+                                    placeholder="200"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">Max Latency (ms)</label>
+                                <input
+                                    type="number"
+                                    value={config.assertions?.max_latency_ms || ''}
+                                    onChange={(e) => setConfig({
+                                        ...config,
+                                        assertions: { ...config.assertions, max_latency_ms: e.target.value ? parseFloat(e.target.value) : null }
+                                    })}
+                                    className="w-full bg-background-dark/50 border border-surface-border/50 rounded-md p-3 text-white focus:outline-none focus:ring-2 focus:ring-red-400/40 focus:border-red-400/60 transition-all text-sm font-mono"
+                                    placeholder="500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">Body Contains</label>
+                                <input
+                                    type="text"
+                                    value={config.assertions?.body_contains || ''}
+                                    onChange={(e) => setConfig({
+                                        ...config,
+                                        assertions: { ...config.assertions, body_contains: e.target.value || null }
+                                    })}
+                                    className="w-full bg-background-dark/50 border border-surface-border/50 rounded-md p-3 text-white focus:outline-none focus:ring-2 focus:ring-red-400/40 focus:border-red-400/60 transition-all text-sm font-mono"
+                                    placeholder="success"
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -306,6 +491,53 @@ const ConfigurationPage = ({ initialConfig, onSave, onCancel }) => {
 
                 </div>
             </main>
+
+            {/* cURL Import Modal */}
+            {isCurlModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-surface-dark border border-surface-border rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="px-6 py-4 border-b border-surface-border flex items-center justify-between bg-background-dark/30">
+                            <h3 className="text-lg font-medium text-white flex items-center gap-2">
+                                <span className="material-symbols-outlined text-primary">terminal</span>
+                                Import from cURL
+                            </h3>
+                            <button 
+                                onClick={() => setIsCurlModalOpen(false)}
+                                className="text-text-secondary hover:text-white transition-colors"
+                            >
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            <p className="text-sm text-text-secondary mb-4">
+                                Paste a cURL command below to automatically fill the configuration.
+                            </p>
+                            <textarea
+                                value={curlInput}
+                                onChange={(e) => setCurlInput(e.target.value)}
+                                className="w-full h-48 bg-background-dark/50 border border-surface-border rounded-lg p-4 text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/60 transition-all resize-none custom-scrollbar"
+                                placeholder='curl -X POST https://api.example.com/data \
+  -H "Content-Type: application/json" \
+  -d "{\"key\": \"value\"}"'
+                            ></textarea>
+                            <div className="mt-6 flex justify-end gap-3">
+                                <button
+                                    onClick={() => setIsCurlModalOpen(false)}
+                                    className="px-4 py-2 rounded-md text-sm font-medium text-text-secondary hover:text-white transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleApplyCurl}
+                                    className="px-6 py-2 rounded-md text-sm font-medium bg-primary hover:bg-primary/90 text-white transition-all shadow-[0_0_15px_rgba(255,170,0,0.3)] hover:shadow-[0_0_20px_rgba(255,170,0,0.5)]"
+                                >
+                                    Parse & Apply
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

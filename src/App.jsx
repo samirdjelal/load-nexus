@@ -7,10 +7,28 @@ import { relaunch } from '@tauri-apps/plugin-process';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import ConfigurationPage from './components/ConfigurationPage';
+import OnboardingWizard from './components/OnboardingWizard';
+import SettingsPage from './components/SettingsPage';
+import HistoryPage from './components/HistoryPage';
 
 function App() {
   const [activePage, setActivePage] = useState('dashboard');
   const [isRunning, setIsRunning] = useState(false);
+  const [lastConfigUsed, setLastConfigUsed] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [settings, setSettings] = useState(() => {
+    const saved = localStorage.getItem('nexus_settings');
+    return saved ? JSON.parse(saved) : {
+      timeout: 30,
+      userAgent: 'LoadNexus/1.0',
+      ignoreSsl: false,
+      followRedirects: true,
+      maxRedirects: 5,
+      dnsCache: true,
+      keepAlive: true,
+      rpsLimit: 0,
+    };
+  });
   const [config, setConfig] = useState({
     url: 'https://httpbin.org/get',
     method: 'GET',
@@ -24,7 +42,12 @@ function App() {
     bodyData: '',
     filePath: '',
     fileKey: 'file',
-    customHeaders: ''
+    customHeaders: '',
+    assertions: {
+      status_code: 200,
+      max_latency_ms: null,
+      body_contains: null
+    }
   });
 
   const [stats, setStats] = useState({
@@ -40,6 +63,7 @@ function App() {
     p95: 0,
     p99: 0,
     errors: 0,
+    assertionFailures: 0,
     rps: 0,
     bytesSentPerSec: 0,
     bytesRecvPerSec: 0,
@@ -48,12 +72,35 @@ function App() {
   });
 
   useEffect(() => {
+    // Check if user has seen onboarding
+    const hasSeenOnboarding = localStorage.getItem('nexus_onboarding_seen');
+    if (!hasSeenOnboarding) {
+      setShowOnboarding(true);
+    }
+  }, []);
+
+  const handleCloseOnboarding = () => {
+    setShowOnboarding(false);
+    localStorage.setItem('nexus_onboarding_seen', 'true');
+  };
+
+  const handleShowTutorial = () => {
+    setShowOnboarding(true);
+  };
+
+  useEffect(() => {
     let unlisten;
     const setupListener = async () => {
       unlisten = await listen('load_test_progress', (event) => {
-        setStats(event.payload);
-        if (event.payload.isRunning !== undefined) {
-          setIsRunning(event.payload.isRunning);
+        const newStats = event.payload;
+        setStats(newStats);
+        
+        if (newStats.isRunning === false && isRunning) {
+          setIsRunning(false);
+          // Save to history when test finishes
+          saveToHistory(newStats);
+        } else if (newStats.isRunning !== undefined) {
+          setIsRunning(newStats.isRunning);
         }
       });
     };
@@ -61,7 +108,32 @@ function App() {
     return () => {
       if (unlisten) unlisten();
     };
-  }, []);
+  }, [isRunning, lastConfigUsed]);
+
+  const saveToHistory = async (finalStats) => {
+    if (!lastConfigUsed) return;
+    
+    try {
+      const successRate = finalStats.iterations > 0 
+        ? (finalStats.iterations - finalStats.errors) / finalStats.iterations 
+        : 0;
+        
+      const rpsValue = finalStats.iterations / (finalStats.elapsedSecs || 1);
+
+      await invoke('save_test_result', {
+        url: lastConfigUsed.url,
+        method: lastConfigUsed.method,
+        configJson: JSON.stringify(lastConfigUsed),
+        statsJson: JSON.stringify(finalStats),
+        successRate: successRate,
+        p99: finalStats.p99,
+        rps: rpsValue
+      });
+      console.log('Test result saved to history');
+    } catch (error) {
+      console.error('Failed to save test result:', error);
+    }
+  };
 
   useEffect(() => {
     const checkForUpdates = async () => {
@@ -112,22 +184,39 @@ function App() {
   const handleStart = async () => {
     setIsRunning(true);
     setStats(prev => ({ ...prev, vusers: config.threads }));
+    
+    const payload = {
+      url: config.url,
+      method: config.method,
+      threads: parseInt(config.threads, 10),
+      duration: parseInt(config.duration, 10),
+      auth_type: config.authType,
+      bearer_token: config.bearerToken || null,
+      basic_user: config.basicUser || null,
+      basic_pass: config.basicPass || null,
+      body_type: config.bodyType,
+      body_data: config.bodyData || null,
+      file_path: config.filePath || null,
+      file_key: config.fileKey || null,
+      custom_headers: config.customHeaders || null,
+      // Advanced Settings
+      timeout_secs: settings.timeout,
+      user_agent: settings.userAgent,
+      ignore_ssl: settings.ignoreSsl,
+      follow_redirects: settings.followRedirects,
+      max_redirects: settings.maxRedirects,
+      dns_cache: settings.dnsCache,
+      keep_alive: settings.keepAlive,
+      rps_limit: settings.rpsLimit,
+      assertions: config.assertions,
+      ramp_up_secs: config.ramp_up_secs || null,
+      csv_data_path: config.csv_data_path || null,
+      env_vars: config.env_vars || null,
+    };
+    
+    setLastConfigUsed(payload);
+
     try {
-      const payload = {
-        url: config.url,
-        method: config.method,
-        threads: parseInt(config.threads, 10),
-        duration: parseInt(config.duration, 10),
-        auth_type: config.authType,
-        bearer_token: config.bearerToken || null,
-        basic_user: config.basicUser || null,
-        basic_pass: config.basicPass || null,
-        body_type: config.bodyType,
-        body_data: config.bodyData || null,
-        file_path: config.filePath || null,
-        file_key: config.fileKey || null,
-        custom_headers: config.customHeaders || null,
-      };
       await invoke('start_test', { config: payload });
     } catch (error) {
       console.error("Failed to start test:", error);
@@ -147,7 +236,20 @@ function App() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background-dark">
-      <Sidebar activePage={activePage} setActivePage={setActivePage} />
+      <OnboardingWizard 
+        isOpen={showOnboarding} 
+        onClose={handleCloseOnboarding} 
+        initialConfig={config}
+        onSave={(newConfig) => {
+          setConfig(prev => ({ ...prev, ...newConfig }));
+          setActivePage('dashboard');
+        }}
+      />
+      <Sidebar 
+        activePage={activePage} 
+        setActivePage={setActivePage} 
+        onShowTutorial={handleShowTutorial}
+      />
       {activePage === 'dashboard' && (
         <Dashboard
           config={config}
@@ -157,6 +259,9 @@ function App() {
           handleStop={handleStop}
           onNavigate={setActivePage}
         />
+      )}
+      {activePage === 'history' && (
+        <HistoryPage />
       )}
       {activePage === 'scenarios' && (
         <ConfigurationPage
@@ -168,8 +273,19 @@ function App() {
           onCancel={() => setActivePage('dashboard')}
         />
       )}
+      {activePage === 'settings' && (
+        <SettingsPage
+          settings={settings}
+          onSave={(newSettings) => {
+            setSettings(newSettings);
+            localStorage.setItem('nexus_settings', JSON.stringify(newSettings));
+            setActivePage('dashboard');
+          }}
+        />
+      )}
     </div>
   );
 }
+
 
 export default App;

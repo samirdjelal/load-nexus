@@ -33,7 +33,7 @@ const HeaderStats = ({ stats, targetDuration }) => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-5 gap-px bg-surface-border mt-4 border border-surface-border rounded-sm overflow-hidden">
+            <div className="grid grid-cols-6 gap-px bg-surface-border mt-4 border border-surface-border rounded-sm overflow-hidden">
                 <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors relative overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
                     <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary relative z-10">Duration</span>
@@ -62,19 +62,26 @@ const HeaderStats = ({ stats, targetDuration }) => {
                     </span>
                 </div>
                 <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary relative z-10">Assertions Fail</span>
+                    <span className={`text-2xl font-bold font-mono relative z-10 ${stats.assertionFailures > 0 ? 'text-red-400' : 'text-white'}`}>
+                        {stats.assertionFailures}
+                    </span>
+                </div>
+                <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors relative overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-br from-chart-purple/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary relative z-10">Avg Response Time</span>
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary relative z-10">Avg Response</span>
                     <span className="text-2xl font-bold text-white font-mono relative z-10">{stats.avgResponse} s</span>
                 </div>
                 <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors relative overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary relative z-10">P50 Response Time</span>
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary relative z-10">P50 Response</span>
                     <span className="text-2xl font-bold text-white font-mono relative z-10">{stats.p50} s</span>
                 </div>
                 <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors relative overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-br from-chart-red/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary relative z-10">P90 Response Time</span>
-                    <span className="text-2xl font-bold text-white font-mono relative z-10">{stats.p90} s</span>
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary relative z-10">P99 Response</span>
+                    <span className="text-2xl font-bold text-white font-mono relative z-10">{stats.p99} s</span>
                 </div>
                 <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors relative overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
@@ -85,6 +92,11 @@ const HeaderStats = ({ stats, targetDuration }) => {
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
                     <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary relative z-10">Downloaded</span>
                     <span className="text-2xl font-bold text-white font-mono relative z-10 text-nowrap">{formatBytes(stats.totalBytesRecv)}</span>
+                </div>
+                <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-chart-green/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary relative z-10">RPS</span>
+                    <span className="text-2xl font-bold text-white font-mono relative z-10">{stats.rps.toFixed(1)}</span>
                 </div>
             </div>
         </div>

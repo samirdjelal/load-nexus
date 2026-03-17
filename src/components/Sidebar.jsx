@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Sidebar = ({ activePage, setActivePage }) => {
+const Sidebar = ({ activePage, setActivePage, onShowTutorial }) => {
     return (
         <aside className="w-16 flex-shrink-0 border-r border-surface-border bg-surface-dark flex flex-col justify-between h-full z-20">
             <div className="flex flex-col items-center py-6 gap-8">
@@ -15,6 +15,15 @@ const Sidebar = ({ activePage, setActivePage }) => {
                         </div>
                     </button>
                     <button
+                        onClick={() => setActivePage('history')}
+                        className={`flex items-center justify-center h-10 w-10 rounded-lg group relative transition-colors ${activePage === 'history' ? 'bg-primary text-white' : 'text-text-secondary hover:bg-white/5'}`}
+                    >
+                        <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>history</span>
+                        <div className="tooltip absolute left-full ml-4 px-2 py-1 bg-surface-border text-white text-xs rounded opacity-0 invisible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none translate-x-[-10px]">
+                            History
+                        </div>
+                    </button>
+                    <button
                         onClick={() => setActivePage('scenarios')}
                         className={`flex items-center justify-center h-10 w-10 rounded-lg group relative transition-colors ${activePage === 'scenarios' ? 'bg-primary text-white' : 'text-text-secondary hover:bg-white/5'}`}
                     >
@@ -26,7 +35,19 @@ const Sidebar = ({ activePage, setActivePage }) => {
                 </nav>
             </div>
             <div className="flex flex-col items-center py-6 gap-6 border-t border-surface-border">
-                <button className="flex items-center justify-center h-10 w-10 rounded-lg text-text-secondary hover:bg-white/5 transition-colors group relative">
+                <button 
+                    onClick={onShowTutorial}
+                    className="flex items-center justify-center h-10 w-10 rounded-lg text-text-secondary hover:bg-white/5 transition-colors group relative"
+                >
+                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>help</span>
+                    <div className="tooltip absolute left-full ml-4 px-2 py-1 bg-surface-border text-white text-xs rounded opacity-0 invisible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none translate-x-[-10px]">
+                        Tutorial
+                    </div>
+                </button>
+                <button 
+                    onClick={() => setActivePage('settings')}
+                    className={`flex items-center justify-center h-10 w-10 rounded-lg group relative transition-colors ${activePage === 'settings' ? 'bg-primary text-white' : 'text-text-secondary hover:bg-white/5'}`}
+                >
                     <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>settings</span>
                     <div className="tooltip absolute left-full ml-4 px-2 py-1 bg-surface-border text-white text-xs rounded opacity-0 invisible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none translate-x-[-10px]">
                         Settings
