@@ -115,7 +115,7 @@ function App() {
     
     try {
       const successRate = finalStats.iterations > 0 
-        ? (finalStats.iterations - finalStats.errors) / finalStats.iterations 
+        ? finalStats.hits / finalStats.iterations 
         : 0;
         
       const rpsValue = finalStats.iterations / (finalStats.elapsedSecs || 1);

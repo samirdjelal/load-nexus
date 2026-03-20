@@ -319,7 +319,7 @@ const LiveChart = ({ stats, activeTab }) => {
                             </div>
                             <div className="py-1.5 text-right text-text-primary">{stats.rps?.toFixed(2) || '0.00'}</div>
                             <div className="py-1.5 text-right text-text-primary">{getMax('rps')}</div>
-                            <div className="py-1.5 text-right text-text-primary">{stats.iterations || 0} hits</div>
+                            <div className="py-1.5 text-right text-text-primary">{stats.hits || 0} hits</div>
 
                             <div className="py-1.5 flex items-center gap-2">
                                 <div className="w-3 h-3 rounded-full bg-[#fb923c]"></div>

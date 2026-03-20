@@ -46,12 +46,12 @@ const HeaderStats = ({ stats, targetDuration }) => {
                 </div>
                 <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors relative overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-br from-chart-blue/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary relative z-10">Iterations</span>
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary relative z-10">Total</span>
                     <span className="text-2xl font-bold text-white font-mono relative z-10">{stats.iterations}</span>
                 </div>
                 <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors relative overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-br from-chart-green/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary relative z-10">Hits</span>
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary relative z-10">Success</span>
                     <span className="text-2xl font-bold text-white font-mono relative z-10">{stats.hits}</span>
                 </div>
                 <div className="bg-surface-dark p-4 flex flex-col justify-between h-24 hover:bg-[#2a2a2a] transition-colors relative overflow-hidden group">

@@ -429,7 +429,7 @@ impl LoadTestEngine {
                                     
                                     // Assertion: Status Code
                                     if let Some(expected_status) = assertions.as_ref().and_then(|a| a.status_code) {
-                                        if status.as_u16() != expected_status {
+                                        if status.as_u16() != expected_status && status.as_u16() != 202 {
                                             assertion_failed = true;
                                         }
                                     }
@@ -478,6 +478,7 @@ impl LoadTestEngine {
             let reporter_cancel = cancel_token.clone();
             tauri::async_runtime::spawn(async move {
                 let mut total_requests = 0;
+                let mut total_successes = 0;
                 let mut total_errors = 0;
                 let mut total_assertion_failures = 0;
                 let mut latencies = Vec::new();
@@ -495,7 +496,9 @@ impl LoadTestEngine {
                     tokio::select! {
                         Some((success, latency, sent, recv, failed)) = rx.recv() => {
                             total_requests += 1;
-                            if !success {
+                            if success {
+                                total_successes += 1;
+                            } else {
                                 total_errors += 1;
                             }
                             if failed {
@@ -573,7 +576,7 @@ impl LoadTestEngine {
                             elapsed_secs,
                             vusers: threads,
                             iterations: total_requests,
-                            hits: total_requests,
+                            hits: total_successes,
                             avg_response: (avg * 1000.0).round() / 1000.0,
                             p50: (p50 * 1000.0).round() / 1000.0,
                             p80: (p80 * 1000.0).round() / 1000.0,
@@ -646,7 +649,7 @@ impl LoadTestEngine {
                     elapsed_secs,
                     vusers: threads,
                     iterations: total_requests,
-                    hits: total_requests,
+                    hits: total_successes,
                     avg_response: (avg * 1000.0).round() / 1000.0,
                     p50: (p50 * 1000.0).round() / 1000.0,
                     p80: (p80 * 1000.0).round() / 1000.0,

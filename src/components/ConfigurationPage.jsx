@@ -89,21 +89,21 @@ const ConfigurationPage = ({ initialConfig, onSave, onCancel }) => {
                         {/* Utility actions group */}
                         <div className="flex items-center bg-background-dark/60 border border-surface-border/60 rounded-lg p-1 gap-0.5">
                             <button
-                                onClick={handleImportProject}
-                                title="Load Project"
-                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-text-secondary hover:text-white hover:bg-surface-border/50 transition-all duration-150"
-                            >
-                                <span className="material-symbols-outlined" style={{fontSize:'16px'}}>folder_open</span>
-                                <span className="hidden sm:inline">Load</span>
-                            </button>
-                            <div className="w-px h-4 bg-surface-border/60" />
-                            <button
                                 onClick={() => setIsCurlModalOpen(true)}
                                 title="Fill from cURL"
                                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-primary hover:text-primary/80 hover:bg-primary/10 transition-all duration-150"
                             >
                                 <span className="material-symbols-outlined" style={{fontSize:'16px'}}>terminal</span>
                                 <span className="hidden sm:inline">cURL</span>
+                            </button>
+                            <div className="w-px h-4 bg-surface-border/60" />
+                            <button
+                                onClick={handleImportProject}
+                                title="Load Project"
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-text-secondary hover:text-white hover:bg-surface-border/50 transition-all duration-150"
+                            >
+                                <span className="material-symbols-outlined" style={{fontSize:'16px'}}>folder_open</span>
+                                <span className="hidden sm:inline">Load</span>
                             </button>
                             <div className="w-px h-4 bg-surface-border/60" />
                             <button
